@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                 String    @id @default(cuid())
+  userId             String
+  providerType       String
+  providerId         String
+  providerAccountId  String
+  refreshToken       String?
+  accessToken        String?
+  accessTokenExpires DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               users     @relation(fields: [userId], references: [id])
+
+  @@unique([providerId, providerAccountId])
+  @@index([userId], map: "Account_userId_fkey")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  expires      DateTime
+  sessionToken String   @unique
+  accessToken  String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         users    @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "Session_userId_fkey")
+}
+
+model users {
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String?   @unique
+  password           String
+  createdAt          DateTime  @default(now())
+  emailVerified      DateTime?
+  image              String?
+  updatedAt          DateTime  @default(now()) @updatedAt
+  current_company_id Int?
+  accounts           Account[]
+  sessions           Session[]
+}
