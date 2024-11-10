@@ -1,52 +1,142 @@
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id              Int               @id()
+  fullName        String            @map("full_name")
+  email           String            @unique()
+  password        String
+  role            UserRole          @relation(fields: [userRoleId], references: [id])
+  createdAt       DateTime          @default(now()) @map("created_at")
+  TeacherSubjects TeacherSubjects[]
+  userRoleId      Int
+  Grades          Grades[]
+  TeacherClasses  TeacherClasses[]
+
+  @@map("users")
 }
 
-datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+model UserRole {
+  id   Int    @id()
+  name String
+  User User[]
+
+  @@map("user_roles")
 }
 
-model Account {
-  id                 String    @id @default(cuid())
-  userId             String
-  providerType       String
-  providerId         String
-  providerAccountId  String
-  refreshToken       String?
-  accessToken        String?
-  accessTokenExpires DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  user               users     @relation(fields: [userId], references: [id])
+model Class {
+  id             Int              @id()
+  name           String
+  year           String
+  valid          Boolean
+  TeacherClasses TeacherClasses[]
+  Announcement   Announcement[]
 
-  @@unique([providerId, providerAccountId])
-  @@index([userId], map: "Account_userId_fkey")
+  @@map("classes")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  expires      DateTime
-  sessionToken String   @unique
-  accessToken  String   @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  user         users    @relation(fields: [userId], references: [id])
+model Subject {
+  id              Int               @id()
+  name            String
+  TeacherSubjects TeacherSubjects[]
+  Lecture         Lecture[]
+  Grades          Grades[]
+  TeacherClasses  TeacherClasses[]
 
-  @@index([userId], map: "Session_userId_fkey")
+  @@map("subjects")
 }
 
-model users {
-  id                 String    @id @default(cuid())
-  name               String?
-  email              String?   @unique
-  password           String
-  createdAt          DateTime  @default(now())
-  emailVerified      DateTime?
-  image              String?
-  updatedAt          DateTime  @default(now()) @updatedAt
-  current_company_id Int?
-  accounts           Account[]
-  sessions           Session[]
+model TeacherSubjects {
+  id Int @id()
+
+  user       User    @relation(fields: [usersId], references: [id])
+  usersId    Int     @map("users_id")
+  subjects   Subject @relation(fields: [subjectsId], references: [id])
+  subjectsId Int     @map("subjects_id")
+
+  @@map("teacher_subjects")
+}
+
+model Lecture {
+  id Int @id()
+
+  title String
+
+  subjects   Subject @relation(fields: [subjectsId], references: [id])
+  subjectsId Int     @map("subjects_id")
+
+  createdAt    DateTime       @default(now()) @map("created_at")
+  LectureFiles LectureFiles[]
+
+  @@map("lectures")
+}
+
+model LectureFiles {
+  id Int @id()
+
+  fileName String @map("file_name")
+  url      String
+
+  fileType   FileTypes @relation(fields: [fileTypeId], references: [id])
+  fileTypeId Int       @map("file_type_id")
+  lecture    Lecture   @relation(fields: [lectureId], references: [id])
+  lectureId  Int
+
+  @@map("lecture_files")
+}
+
+model FileTypes {
+  id Int @id()
+
+  extention    String
+  type         String
+  LectureFiles LectureFiles[]
+
+  @@map("file_types")
+}
+
+model Grades {
+  id Int @id()
+
+  subject    Subject @relation(fields: [subjectsId], references: [id])
+  subjectsId Int     @map("subjects_id")
+  user       User    @relation(fields: [usersId], references: [id])
+  usersId    Int     @map("users_id")
+
+  grade Int
+  date  DateTime
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("grades")
+}
+
+model TeacherType {
+  id             Int              @id()
+  name           String
+  TeacherClasses TeacherClasses[]
+
+  @@map("teacher_types")
+}
+
+model TeacherClasses {
+  id Int @id()
+
+  user          User        @relation(fields: [usersId], references: [id])
+  usersId       Int         @map("users_id")
+  class         Class       @relation(fields: [classId], references: [id])
+  classId       Int         @map("class_id")
+  teacherType   TeacherType @relation(fields: [teacherTypeId], references: [id])
+  teacherTypeId Int         @map("teacher_type_id")
+  subject       Subject     @relation(fields: [subjectsId], references: [id])
+  subjectsId    Int         @map("subjects_id")
+
+  @@map("teacher_classes")
+}
+
+model Announcement {
+  id Int @id
+
+  title String
+  text  String
+
+  class   Class @relation(fields: [classId], references: [id])
+  classId Int
 }
